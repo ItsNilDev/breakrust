@@ -7,6 +7,13 @@ struct Player {
 	x: f32,
 }
 
+struct Box {
+	width: f32,
+	height: f32,
+	// x: f32,
+	// y: f32,
+}
+
 struct Ball {
 	x: f32,
 	y: f32,
@@ -25,9 +32,9 @@ fn conf() -> Conf {
 	}
 }
 
-
 #[macroquad::main("BasicShapes")]
 async fn main() {
+	debug!("{} {}", screen_height(), screen_width());
 	let mut player = Player {
 		rec_width: 130.,
 		rec_height: 20.,
@@ -41,6 +48,9 @@ async fn main() {
 		dy: -300.,
 		launched: false,
 	};
+	const BLOCKS_H:  usize = 3;
+	const BLOCKS_W:  usize = 5;
+	let mut visibilities = [[true; BLOCKS_W]; BLOCKS_H];
 	TermLogger::new(
 		LevelFilter::Info,
 		Config::default(),
@@ -60,6 +70,11 @@ async fn main() {
 
 	loop {
 		if !game_over {
+			clear_background(BLACK);
+
+			draw_rectangle(player.x, screen_height() - 50., player.rec_width, player.rec_height, RED);
+			draw_circle(ball.x, ball.y, 15.0, LIGHTGRAY);
+
 			if is_key_down(KeyCode::I) {
 				// 30 is for the max width that player can go
 				if player.x <= screen_width() - player.rec_width - 30. {
@@ -130,13 +145,43 @@ async fn main() {
 				ball.x  += delta * ball.dx;
 				ball.y += delta * ball.dy;
 			}
-		}
 
-		if !game_over {
-			clear_background(BLACK);
-			draw_rectangle(player.x, screen_height() - 50., player.rec_width, player.rec_height, RED);
+			for i in 1..=BLOCKS_H {
+				for j in 1..=BLOCKS_W {
+					if visibilities[i-1][j-1] {
+						// while w <=  screen_width() as i32 / 2 {
+						let plat = Box {
+							// width: screen_width() / BLOCKS_W as f32,
+							// height: screen_height() / BLOCKS_H as f32,
+							width: 100.,
+							height: 40.,
 
-			draw_circle(ball.x, ball.y, 15.0, WHITE);
+						};
+
+						let x = j as f32 * plat.width + 50.;
+						let y = i as f32 * plat.height + 50.;
+
+						draw_rectangle(x, y, plat.width-30. , plat.height-20., SKYBLUE);
+
+						// debug!("x {}, y {}, ball.x {}, ball.y {}", x, y, ball.x, ball.y);
+						if ball.x >= x
+							&& ball.x < x + plat.width
+							&& ball.y >= y
+							&& ball.y < y + plat.height {
+								// FIXME: side of the boxes
+								ball.dy = -ball.dy;
+								visibilities[i-1][j-1] = false;
+								debug!("test");
+							}
+					}
+				}
+			}
+
+			// draw_rectangle(100., 40., 120., 20., SKYBLUE);
+			// draw_rectangle(200., 40., 120., 20., SKYBLUE);
+			// draw_rectangle(300., 40., 100., 20., SKYBLUE);
+			// draw_rectangle(100., 80., 100., 20., SKYBLUE);
+
 		} else {
 			clear_background(RED);
 			if is_key_pressed(KeyCode::Enter) {
